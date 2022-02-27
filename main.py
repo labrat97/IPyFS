@@ -4,7 +4,7 @@ from io import TextIOBase, SEEK_SET, SEEK_CUR, SEEK_END
 
 import cid
 
-DEFAULT_IPFS_BLOCK_SIZE:int = 4 * int(2**20) # 10M
+DEFAULT_IPFS_BLOCK_SIZE:int = 4 * int(2**20) # 4M
 DEFAULT_IPFS_COMMAND:str = 'ipfs'
 SUCCESS:int = 0
 FAILURE:int = 1
