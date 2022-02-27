@@ -4,17 +4,18 @@ from io import TextIOBase, SEEK_SET, SEEK_CUR, SEEK_END
 
 import cid
 
-DEFAULT_IPFS_BUFFER_SIZE:int = 10 * int(2**20) # 10M
+DEFAULT_IPFS_BLOCK_SIZE:int = 4 * int(2**20) # 10M
 DEFAULT_IPFS_COMMAND:str = 'ipfs'
 SUCCESS:int = 0
 FAILURE:int = 1
 
 class IPFile(TextIOBase):
-    def __init__(self, multihash:str, ipns:bool=False, command:str=DEFAULT_IPFS_COMMAND):
+    def __init__(self, multihash:str, ipns:bool=False, command:str=DEFAULT_IPFS_COMMAND, blockSize:int=DEFAULT_IPFS_BLOCK_SIZE):
         super(IPFile, self).__init__()
 
         # Make sure the provided cid is valid
-        assert cid.is_cid(multihash)
+        if not cid.is_cid(multihash):
+            raise ArgumentError(f'\"{multihash}\" is not a valid content identifier.')
         self.multihash:str = multihash
 
         # Basic running parameters
@@ -24,7 +25,7 @@ class IPFile(TextIOBase):
         self.ippath:str = f"/{'ipns' if self.ipns else 'ipfs'}/{self.multihash}"
         self.curpos:int = 0
         self.eof:bool = False
-        self.seekbuf:int = DEFAULT_IPFS_BUFFER_SIZE
+        self.seekbuf:int = blockSize
 
         # Hold the process that runs the shell command
         self.lastproc:sp.Popen = None
@@ -48,7 +49,7 @@ class IPFile(TextIOBase):
             args.extend(['-l', str(size)])
         args.append(self.ippath)
         self.lastproc = sp.Popen(args, stdout=sp.PIPE, stderr=sp.PIPE)
-        stdout, stderr = self.lastproc.communicate()
+        stdout, _ = self.lastproc.communicate()
         outlen = len(stdout)
         self.lastproc = None
 
