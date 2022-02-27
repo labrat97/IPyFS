@@ -4,7 +4,7 @@ from io import TextIOBase, SEEK_SET, SEEK_CUR, SEEK_END
 
 import cid
 
-DEFAULT_IPFS_BUFFER_SIZE:int = 4 * int(2**20) # 4M
+DEFAULT_IPFS_BUFFER_SIZE:int = 10 * int(2**20) # 10M
 DEFAULT_IPFS_COMMAND:str = 'ipfs'
 SUCCESS:int = 0
 FAILURE:int = 1
@@ -51,10 +51,6 @@ class IPFile(TextIOBase):
         stdout, stderr = self.lastproc.communicate()
         outlen = len(stdout)
         self.lastproc = None
-
-        # Make sure an error didn't happen
-        if len(stderr) > 0:
-            raise IOError(stderr.decode())
 
         # Increment cursor
         if (not self.eof) and size >= 0:
