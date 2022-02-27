@@ -4,7 +4,7 @@ from io import TextIOBase, SEEK_SET, SEEK_CUR, SEEK_END
 
 import cid
 
-DEFAULT_IPFS_BUFFER_SIZE:int = int(2e20)
+DEFAULT_IPFS_BUFFER_SIZE:int = 4 * int(2**20) # 4M
 DEFAULT_IPFS_COMMAND:str = 'ipfs'
 SUCCESS:int = 0
 FAILURE:int = 1
@@ -37,15 +37,15 @@ class IPFile(TextIOBase):
 
     def read(self, size:int=-1) -> bytes:
         # Quick return, at end of the file
-        if self.eof: return None
+        if self.eof or size == 0: return None
 
         # Wait for the last process call to finish if it was non-blocking
         self.__waitForLast()
 
         # Start the process to pull the data from ipfs, then pull the data into python
         args = [self.command, 'cat', '-o', str(self.curpos)]
-        if size > 0:
-            args.extend(['-i', str(size)])
+        if size >= 0:
+            args.extend(['-l', str(size)])
         args.append(self.ippath)
         self.lastproc = sp.Popen(args, stdout=sp.PIPE, stderr=sp.PIPE)
         stdout, stderr = self.lastproc.communicate()
@@ -57,10 +57,11 @@ class IPFile(TextIOBase):
             raise IOError(stderr.decode())
 
         # Increment cursor
-        self.curpos += outlen
-        if outlen < size and size > 0:
-            self.eof = True
-
+        if (not self.eof) and size >= 0:
+            self.curpos += size
+            if outlen < size:
+                self.eof = True
+            return stdout[:size]
         return stdout
     
     def readline(self, size:int=-1) -> bytes:
