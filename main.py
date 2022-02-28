@@ -5,7 +5,7 @@ from os import environ
 
 import cid
 
-DEFAULT_IPFS_BLOCK_SIZE:int = 4 * int(2**20) # 4M
+DEFAULT_IPFS_BLOCK_SIZE:int = 256 * int(2**10) # 256k -> The default IPFS chunker size
 DEFAULT_IPFS_COMMAND:str = environ.get('IPYFS_CMD', 'ipfs')
 SUCCESS:int = 0
 FAILURE:int = 1
@@ -89,7 +89,7 @@ class IPFile(TextIOBase):
 
         # Trim off the unneeded tail of the buffer
         if newlineIdx > 0:
-            self.curpos = (self.curpos - len(aggregator[-1])) + newlineIdx
+            self.curpos = (self.curpos - len(aggregator[-1])) + newlineIdx + 1
             aggregator[-1] = aggregator[-1][:newlineIdx]
         elif newlineIdx == 0:
             aggregator = aggregator[:-1]
