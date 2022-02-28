@@ -31,19 +31,19 @@ class IPFile(TextIOBase):
         # Hold the process that runs the shell command
         self.lastproc:sp.Popen = None
 
-    def __waitForLast(self):
+    def __waitForLast__(self):
         # Wait for the self contianed process to end
         if self.lastproc is None: return
         assert self.lastproc.wait() == SUCCESS
         self.lastproc = None
 
-    def __probeSize(self) -> int:
+    def __probeSize__(self) -> int:
         # Call IPFS and stat the file to see the total size in bytes
-        self.lastproc = sp.Popen([self.command, 'files', 'stat', '--size', self.ippath], stdout=sp.PIPE, stderr=sp.PIPE)
+        self.lastproc = sp.Popen([self.command, 'files', 'stat', '--format=<size>', self.ippath], stdout=sp.PIPE, stderr=sp.PIPE)
         stdout, _ = self.lastproc.communicate()
         self.lastproc = None
 
-        return int(str.strip(stdout))
+        return int(str.strip(stdout.decode()))
 
     def read(self, size:int=-1) -> bytes:
         # Quick return, at end of the file
@@ -51,7 +51,7 @@ class IPFile(TextIOBase):
         if size == 0: return b''
 
         # Wait for the last process call to finish if it was non-blocking
-        self.__waitForLast()
+        self.__waitForLast__()
 
         # Start the process to pull the data from ipfs, then pull the data into python
         args = [self.command, 'cat', '-o', str(self.curpos)]
@@ -76,7 +76,7 @@ class IPFile(TextIOBase):
         if self.eof: return None
 
         # Wait for the last process call to finish if it was non-blocking
-        self.__waitForLast()
+        self.__waitForLast__()
 
         # Some running data
         aggregator = []
@@ -89,11 +89,15 @@ class IPFile(TextIOBase):
         else:
             batchsize:int = size
 
-        # Scan the read for newlines, ending early if a newline is found
+        # Scan the read for newlines, ending early if a newline is found or if
+        #   the requested size is reached
         while searching:
             buffer:bytes = self.read(batchsize)
             aggregator.append(buffer)
             newlineIdx = buffer.find(b'\n')
+            abspos:int = (len(aggregator) * batchsize) + len(buffer)
+            if newlineIdx < 0 and abspos > size and size >= 0:
+                newlineIdx = batchsize-(abspos - size)
             searching = (newlineIdx < 0) and not self.eof
 
         # Trim off the unneeded tail of the buffer
@@ -114,7 +118,7 @@ class IPFile(TextIOBase):
         if whence == SEEK_SET:
             if offset > 0:
                 self.curpos = offset
-                if self.curpos >= self.__probeSize():
+                if self.curpos >= self.__probeSize__():
                     self.eof = True
             else:
                 self.curpos = 0
@@ -125,7 +129,7 @@ class IPFile(TextIOBase):
             # Clamp the seek value to the dimensions of the file
             if self.curpos < 0:
                 self.curpos = 0
-            elif self.curpos >= self.__probeSize():
+            elif self.curpos >= self.__probeSize__():
                 self.eof = True
         # Seek from the end of the file
         elif whence == SEEK_END:
@@ -134,7 +138,7 @@ class IPFile(TextIOBase):
                 self.eof = True
 
             # Seek
-            self.curpos = self.__probeSize() + offset
+            self.curpos = self.__probeSize__() + offset
         # This shouldn't happen, and you are bad if it does
         else:
             raise ArgumentError(whence, f'Unknown literal provided: \"{whence}\"')
