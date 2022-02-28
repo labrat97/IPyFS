@@ -6,7 +6,7 @@ from math import sqrt
 from typing import List
 
 
-class ReversabilityTest(unittest.TestCase):
+class ReadTest(unittest.TestCase):
     def testRandom(self):
         # Make sure both internal cat types are called to evaluate
         size:int = int((rand()+1)*DEFAULT_IPFS_BLOCK_SIZE)
@@ -32,22 +32,31 @@ class ReversabilityTest(unittest.TestCase):
                     break
     
     def testRandomLines(self):
-        # Generate random data parameters
+        # Generate random lines to seed the test
         lineCount:int = int((rand()+1)*sqrt(DEFAULT_IPFS_BLOCK_SIZE))
         lines:List[bytes] = []
+
+        # Do generation math
         for _ in range(lineCount):
+            # Make sure not too many blocks are generated
             length:int = int((rand()+1)*sqrt(DEFAULT_IPFS_BLOCK_SIZE))
             tape:List[int] = [0] * length
+
+            # Add newlines during random generation when appropriate
             for idx in range(length):
                 n = int(rand() * 255)
                 while n == ord('\n'):
                     n = int(rand() * 255)
                 tape[idx] = n
             lines.append(bytes(tape))
+        # Now it's appropriate
         buffer:str = b'\n'.join(lines)
+
+        # Add the file to IPFS, not pinning
         proc = sp.Popen([DEFAULT_IPFS_COMMAND, 'add', '-Q', '--pin=false'], stdin=sp.PIPE, stdout=sp.PIPE)
         hash = str.strip(proc.communicate(input=bytes(buffer))[0].decode())
 
+        # Read and test the file by reading each line
         with IPFile(hash, ipns=False) as file:
             line = file.readline()
             idx:int = 0
@@ -55,4 +64,3 @@ class ReversabilityTest(unittest.TestCase):
                 self.assertEquals(bytes(lines[idx]), line, msg=f'[{idx+1}]')
                 idx += 1
                 line = file.readline()
- 

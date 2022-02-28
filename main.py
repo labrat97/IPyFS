@@ -110,6 +110,7 @@ class IPFile(TextIOBase):
         return self.curpos
     
     def seek(self, offset:int, whence:int=SEEK_SET) -> int:
+        # Seek from the beginning of the file
         if whence == SEEK_SET:
             if offset > 0:
                 self.curpos = offset
@@ -117,18 +118,26 @@ class IPFile(TextIOBase):
                     self.eof = True
             else:
                 self.curpos = 0
+        # Seek from the current position in the file
         elif whence == SEEK_CUR:
             self.curpos += offset
+
+            # Clamp the seek value to the dimensions of the file
             if self.curpos < 0:
                 self.curpos = 0
             elif self.curpos >= self.__probeSize():
                 self.eof = True
+        # Seek from the end of the file
         elif whence == SEEK_END:
+            # End the file read according to read functions
             if offset >= 0:
                 self.eof = True
+
+            # Seek
             self.curpos = self.__probeSize() + offset
-        
+        # This shouldn't happen, and you are bad if it does
         else:
             raise ArgumentError(whence, f'Unknown literal provided: \"{whence}\"')
         
+        # This is the normal behavior of the seek() function, to return the cursor position
         return self.curpos
