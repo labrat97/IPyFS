@@ -37,9 +37,18 @@ class IPFile(TextIOBase):
         assert self.lastproc.wait() == SUCCESS
         self.lastproc = None
 
+    def __probeSize(self) -> int:
+        # Call IPFS and stat the file to see the total size in bytes
+        self.lastproc = sp.Popen([self.command, 'files', 'stat', '--size', self.ippath], stdout=sp.PIPE, stderr=sp.PIPE)
+        stdout, _ = self.lastproc.communicate()
+        self.lastproc = None
+
+        return int(str.strip(stdout))
+
     def read(self, size:int=-1) -> bytes:
         # Quick return, at end of the file
-        if self.eof or size == 0: return None
+        if self.eof: return None
+        if size == 0: return b''
 
         # Wait for the last process call to finish if it was non-blocking
         self.__waitForLast()
@@ -100,16 +109,25 @@ class IPFile(TextIOBase):
         if self.eof: return None
         return self.curpos
     
-    def seek(self, offset:int, whence:int=SEEK_CUR):
-        if whence == SEEK_CUR:
-            return self.curpos
-        elif whence == SEEK_END:
-            self.eof = True
-            self.curpos = -1
-        elif whence == SEEK_SET:
-            if self.curpos == -1 or (self.curpos != -1 and offset < self.curpos):
-                self.eof = False
+    def seek(self, offset:int, whence:int=SEEK_SET) -> int:
+        if whence == SEEK_SET:
+            if offset > 0:
                 self.curpos = offset
+                if self.curpos >= self.__probeSize():
+                    self.eof = True
+            else:
+                self.curpos = 0
+        elif whence == SEEK_CUR:
+            self.curpos += offset
+            if self.curpos < 0:
+                self.curpos = 0
+            elif self.curpos >= self.__probeSize():
+                self.eof = True
+        elif whence == SEEK_END:
+            if offset >= 0:
+                self.eof = True
+            self.curpos = self.__probeSize() + offset
+        
         else:
             raise ArgumentError(whence, f'Unknown literal provided: \"{whence}\"')
         
