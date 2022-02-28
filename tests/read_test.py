@@ -9,19 +9,19 @@ from typing import List
 class ReadTest(unittest.TestCase):
     def testRandom(self):
         # Make sure both internal cat types are called to evaluate
-        size:int = int((rand()+1)*DEFAULT_IPFS_BLOCK_SIZE)
+        size:int = int(2.5*DEFAULT_IPFS_BLOCK_SIZE)
 
         # Generate random data to be retrieved
         tape = [None] * size
         for i in range(size):
             tape[i] = int(rand() * 255)
-        proc = sp.Popen([DEFAULT_IPFS_COMMAND, 'add', '-Q', '--pin=false'], stdin=sp.PIPE, stdout=sp.PIPE)
+        proc = sp.Popen([DEFAULT_IPFS_COMMAND, 'add', '-Q', '--pin=false', '--stdin-name=12345'], stdin=sp.PIPE, stdout=sp.PIPE)
         hash = str.strip(proc.communicate(input=bytes(tape))[0].decode())
         offset:int = 0
 
         # Test the full file, including the sizing function
         with IPFile(hash, ipns=False) as file:
-            self.assertEqual(len(bytes(tape)), file.__probeSize())
+            self.assertEqual(len(bytes(tape)), file.__probeSize__())
             self.assertEquals(bytes(tape), file.read())
 
         # Test the file in chunks of prodided length
