@@ -1,7 +1,7 @@
 import unittest
 from random import random as rand
 import subprocess as sp
-from main import *
+from ipyfs import *
 from math import sqrt
 from typing import List
 

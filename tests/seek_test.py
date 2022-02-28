@@ -2,7 +2,7 @@ import unittest
 from random import random as rand
 from random import randint
 import subprocess as sp
-from main import *
+from ipyfs import *
 from typing import List
 
 class SeekTest(unittest.TestCase):
