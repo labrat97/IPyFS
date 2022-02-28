@@ -3,7 +3,6 @@ from random import random as rand
 from random import randint
 import subprocess as sp
 from ipyfs import *
-from typing import List
 
 class SeekTest(unittest.TestCase):
     def __randInit(self) -> str:
