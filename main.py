@@ -1,11 +1,12 @@
 from argparse import ArgumentError
 import subprocess as sp
 from io import TextIOBase, SEEK_SET, SEEK_CUR, SEEK_END
+from os import environ
 
 import cid
 
 DEFAULT_IPFS_BLOCK_SIZE:int = 4 * int(2**20) # 4M
-DEFAULT_IPFS_COMMAND:str = 'ipfs'
+DEFAULT_IPFS_COMMAND:str = environ.get('IPYFS_CMD', 'ipfs')
 SUCCESS:int = 0
 FAILURE:int = 1
 
