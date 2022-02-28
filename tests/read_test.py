@@ -19,8 +19,9 @@ class ReadTest(unittest.TestCase):
         hash = str.strip(proc.communicate(input=bytes(tape))[0].decode())
         offset:int = 0
 
-        # Test the full file
+        # Test the full file, including the sizing function
         with IPFile(hash, ipns=False) as file:
+            self.assertEqual(len(bytes(tape)), file.__probeSize())
             self.assertEquals(bytes(tape), file.read())
 
         # Test the file in chunks of prodided length
